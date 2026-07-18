@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: raw_api_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: raw_api_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 123456
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

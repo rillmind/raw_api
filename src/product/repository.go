@@ -1,27 +1,25 @@
-package store
+package product
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/rillmind/raw_api/models"
 )
 
 var (
 	ErrNotFound = errors.New("Produto nao encontrado")
 )
 
-type Store struct {
+type StoreRepository struct {
 	db *sql.DB
 }
 
-func New(db *sql.DB) *Store {
-	return &Store{db: db}
+func NewRepository(db *sql.DB) *StoreRepository {
+	return &StoreRepository{db: db}
 }
 
-func (s *Store) Create(ctx context.Context, p *models.Product) error {
+func (s *StoreRepository) Create(ctx context.Context, p *Product) error {
 	query := `
 		insert into products (name, price, stock)
 		values ($1, $2, $3)
@@ -31,14 +29,14 @@ func (s *Store) Create(ctx context.Context, p *models.Product) error {
 	return s.db.QueryRowContext(ctx, query, p.Name, p.Price, p.Stock).Scan(&p.ID, &p.CreatedAt)
 }
 
-func (s *Store) GetByID(ctx context.Context, id int64) (*models.Product, error) {
+func (s *StoreRepository) GetByID(ctx context.Context, id int64) (*Product, error) {
 	query := `
 		select id, name, price, stock, created_at
 		from products
 		where id = $1
 	`
 
-	var p models.Product
+	var p Product
 
 	err := s.db.QueryRowContext(ctx, query, id).Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CreatedAt)
 
@@ -53,7 +51,7 @@ func (s *Store) GetByID(ctx context.Context, id int64) (*models.Product, error) 
 	return &p, nil
 }
 
-func (s *Store) GetAll(ctx context.Context) ([]models.Product, error) {
+func (s *StoreRepository) GetAll(ctx context.Context) ([]Product, error) {
 	query := `
 		select id, name, price, stock, created_at
 		from products
@@ -67,10 +65,10 @@ func (s *Store) GetAll(ctx context.Context) ([]models.Product, error) {
 
 	defer rows.Close()
 
-	var products []models.Product
+	var products []Product
 
 	for rows.Next() {
-		var p models.Product
+		var p Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CreatedAt); err != nil {
 			return nil, fmt.Errorf("Lendo linha: %v", err)
 		}
@@ -84,7 +82,7 @@ func (s *Store) GetAll(ctx context.Context) ([]models.Product, error) {
 	return products, nil
 }
 
-func (s *Store) Update(ctx context.Context, p *models.Product) error {
+func (s *StoreRepository) Update(ctx context.Context, p *Product) error {
 	query := `
 		update products
 		set name = $1, price = $2, stock = $3
@@ -107,7 +105,7 @@ func (s *Store) Update(ctx context.Context, p *models.Product) error {
 	return nil
 }
 
-func (s *Store) Delete(ctx context.Context, id int64) error {
+func (s *StoreRepository) Delete(ctx context.Context, id int64) error {
 	query := `
 		delete
 		from products

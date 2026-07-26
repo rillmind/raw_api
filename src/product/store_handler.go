@@ -1,4 +1,4 @@
-package handlers
+package product
 
 import (
 	"context"
@@ -7,16 +7,21 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/rillmind/raw_api/models"
-	"github.com/rillmind/raw_api/store"
 )
 
-type StoreHandler struct {
-	store *store.Store
+type Store interface {
+	Create(ctx context.Context, product *Product) error
+	GetByID(ctx context.Context, id int64) (*Product, error)
+	GetAll(ctx context.Context) ([]Product, error)
+	Update(ctx context.Context, product *Product) error
+	Delete(ctx context.Context, id int64) error
 }
 
-func NewStoreHandler(s *store.Store) *StoreHandler {
+type StoreHandler struct {
+	store StoreRepository
+}
+
+func NewStoreHandler(s StoreRepository) *StoreHandler {
 	return &StoreHandler{store: s}
 }
 
@@ -29,7 +34,7 @@ func (sh *StoreHandler) RegisterRoutes(mux *http.ServeMux) {
 }
 
 func (sh *StoreHandler) Create(w http.ResponseWriter, req *http.Request) {
-	var p models.Product
+	var p Product
 
 	if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
 		writeError(w, http.StatusBadRequest, "Corpo da requisicao invalido")
@@ -76,7 +81,7 @@ func (sh *StoreHandler) GetByID(wr http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	product, err := sh.store.GetByID(ctx, id)
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, ErrNotFound) {
 		writeError(wr, http.StatusNotFound, "Produto não encontrado!")
 		return
 	}
@@ -95,7 +100,7 @@ func (sh *StoreHandler) Update(wr http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var product models.Product
+	var product Product
 	if err := json.NewDecoder(req.Body).Decode(&product); err != nil {
 		writeError(wr, http.StatusBadRequest, "Corpo da requisição inválido!")
 		return
@@ -106,7 +111,7 @@ func (sh *StoreHandler) Update(wr http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	err = sh.store.Update(ctx, &product)
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, ErrNotFound) {
 		writeError(wr, http.StatusNotFound, "Produto não encontrado!")
 		return
 	}
@@ -129,7 +134,7 @@ func (sh *StoreHandler) Delete(wr http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	err = sh.store.Delete(ctx, id)
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, ErrNotFound) {
 		writeError(wr, http.StatusNotFound, "Produto não encontrado!")
 		return
 	}

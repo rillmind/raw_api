@@ -11,8 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rillmind/raw_api/db"
-	"github.com/rillmind/raw_api/handlers"
-	"github.com/rillmind/raw_api/store"
+	"github.com/rillmind/raw_api/src/product"
 )
 
 func main() {
@@ -33,8 +32,8 @@ func main() {
 
 	defer db.Close()
 
-	store := store.New(db)
-	storeHandler := handlers.NewStoreHandler(store)
+	store := product.NewRepository(db)
+	storeHandler := product.NewStoreHandler(*store)
 
 	mux := http.NewServeMux()
 	storeHandler.RegisterRoutes(mux)
